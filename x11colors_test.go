@@ -14,9 +14,11 @@ func TestSlugify(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		if test.name.Slugify() != test.expected {
-			t.Errorf("Expected %s, got %s", test.expected, test.name.Slugify())
-		}
+		t.Run(string(test.name), func(t *testing.T) {
+			if got := test.name.Slugify(); got != test.expected {
+				t.Errorf("Slugify() = %q, want %q", got, test.expected)
+			}
+		})
 	}
 }
 

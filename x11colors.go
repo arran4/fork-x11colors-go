@@ -4,7 +4,6 @@ import (
 	"image/color"
 	"math/rand"
 	"strings"
-	"time"
 )
 
 // Name defines type for color name
@@ -29,7 +28,7 @@ func (n Name) Slugify() string {
 
 // X11Color defines single color
 type X11Color struct {
-	// Name is the color name as defined in <X11root>/lib/X11/rgb.txt
+	// Name is the color name as defined in <X11root>/lib/X11/rgb.txt (https://gitlab.freedesktop.org/xorg/app/rgb/-/raw/master/rgb.txt)
 	Name Name
 	// RGBA is the color RGB with A component always set to 0xFF (255)
 	RGBA color.RGBA
@@ -2428,9 +2427,10 @@ func Random() X11Color {
 	return colors[rand.Intn(len(colors))]
 }
 
-// RandomSeeded initialises generator with time-based seed and returns random color
+// RandomSeeded initialises generator with time-based seed and returns random color.
+// Deprecated: In modern Go, the global random generator is automatically seeded.
+// This function simply calls Random().
 func RandomSeeded() X11Color {
-	rand.Seed(time.Now().Unix())
 	return Random()
 }
 
