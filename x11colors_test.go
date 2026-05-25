@@ -1,6 +1,8 @@
 package x11colors
 
 import (
+	"image/color"
+
 	"testing"
 )
 
@@ -49,4 +51,39 @@ func TestRandomSeeded(t *testing.T) {
 	if c.Name == "" {
 		t.Errorf("Expected a color, got empty name")
 	}
+}
+
+func TestGetClosest(t *testing.T) {
+	tests := []struct {
+		input    color.RGBA
+		expected string
+		name string
+	}{
+		{color.RGBA{R: 255, G: 255, B: 255, A: 255}, "gray100", "White"},
+		{color.RGBA{R: 0, G: 0, B: 0, A: 255}, "Black", "Black"},
+		{color.RGBA{R: 250, G: 0, B: 0, A: 255}, "Red", "Red"},
+		{color.RGBA{R: 0, G: 250, B: 0, A: 255}, "green", "Green"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			closest := GetClosest(test.input)
+			if closest.Name.String() != test.expected {
+				t.Errorf("GetClosest() = %q, want %q", closest.Name, test.expected)
+			}
+		})
+	}
+}
+
+func TestGetClosestEmpty(t *testing.T) {
+	// Empty colors array
+	oldColors := colors
+	colors = []X11Color{}
+
+	closest := GetClosest(color.RGBA{255, 255, 255, 255})
+	if closest.Name != "" {
+		t.Errorf("Expected empty name, got %s", closest.Name)
+	}
+
+	colors = oldColors
 }
