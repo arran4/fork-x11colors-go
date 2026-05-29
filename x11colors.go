@@ -1,6 +1,7 @@
 package x11colors
 
 import (
+	"fmt"
 	"image/color"
 	"math/rand"
 	"time"
@@ -37,6 +38,11 @@ type X11Color struct {
 	// true for black and false for white - as it is in
 	// https://ru.wikipedia.org/wiki/%D0%A1%D0%BF%D0%B8%D1%81%D0%BE%D0%BA_%D1%86%D0%B2%D0%B5%D1%82%D0%BE%D0%B2_%D0%B2_X11
 	CaptionBlack bool
+}
+
+// ToString returns a standard hex string representation of the color (e.g., "#F0F8FF").
+func (c X11Color) ToString() string {
+	return fmt.Sprintf("#%02X%02X%02X", c.RGBA.R, c.RGBA.G, c.RGBA.B)
 }
 
 var (
@@ -495,4 +501,56 @@ func RandomSeeded() X11Color {
 func GetByName(name string) (x11color X11Color, found bool) {
 	x11color, found = names[name]
 	return
+}
+
+// FromString attempts to parse a string into an X11Color.
+// It tries to match by exact name, case-insensitive name, slug, or hex code (e.g., "#F0F8FF" or "#FFF").
+func FromString(s string) (X11Color, error) {
+	// Try exact match
+	if c, ok := names[s]; ok {
+		return c, nil
+	}
+
+	// Try case-insensitive name match or slug match
+	sLower := strings.ToLower(s)
+	for _, c := range colors {
+		if strings.ToLower(c.Name.String()) == sLower || c.Name.Slugify() == sLower {
+			return c, nil
+		}
+	}
+
+	// Try parsing as hex code
+	if strings.HasPrefix(s, "#") {
+		hex := s[1:]
+		if len(hex) == 3 {
+			// Expand short hex e.g. #ABC to #AABBCC
+			hex = string([]byte{hex[0], hex[0], hex[1], hex[1], hex[2], hex[2]})
+		}
+		if len(hex) == 6 {
+			var r, g, b uint8
+			n, err := fmt.Sscanf(hex, "%02x%02x%02x", &r, &g, &b)
+			if err == nil && n == 3 {
+				// We can return a generic X11Color since it's an arbitrary hex.
+				// But first let's see if this hex matches any X11 color perfectly.
+				for _, c := range colors {
+					if c.RGBA.R == r && c.RGBA.G == g && c.RGBA.B == b {
+						return c, nil
+					}
+				}
+
+				// Basic lightness calculation to set a sensible CaptionBlack value
+				// Luma = 0.2126 * R + 0.7152 * G + 0.0722 * B
+				luma := 0.2126*float64(r) + 0.7152*float64(g) + 0.0722*float64(b)
+				captionBlack := luma > 128
+
+				return X11Color{
+					Name:         Name(s),
+					RGBA:         color.RGBA{R: r, G: g, B: b, A: 0xFF},
+					CaptionBlack: captionBlack,
+				}, nil
+			}
+		}
+	}
+
+	return X11Color{}, fmt.Errorf("invalid color string: %s", s)
 }
