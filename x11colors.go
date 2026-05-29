@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"image/color"
 	"math/rand"
-	"time"
+	"strconv"
 	"strings"
+	"time"
 )
 
 // Name defines type for color name
@@ -503,6 +504,22 @@ func GetByName(name string) (x11color X11Color, found bool) {
 	return
 }
 
+var normalizedNames map[string]X11Color
+
+func init() {
+	normalizedNames = make(map[string]X11Color, len(colors)*2)
+	for _, c := range colors {
+		nameLower := strings.ToLower(c.Name.String())
+		if _, ok := normalizedNames[nameLower]; !ok {
+			normalizedNames[nameLower] = c
+		}
+		slug := c.Name.Slugify()
+		if _, ok := normalizedNames[slug]; !ok {
+			normalizedNames[slug] = c
+		}
+	}
+}
+
 // FromString attempts to parse a string into an X11Color.
 // It tries to match by exact name, case-insensitive name, slug, or hex code (e.g., "#F0F8FF" or "#FFF").
 func FromString(s string) (X11Color, error) {
@@ -513,10 +530,8 @@ func FromString(s string) (X11Color, error) {
 
 	// Try case-insensitive name match or slug match
 	sLower := strings.ToLower(s)
-	for _, c := range colors {
-		if strings.ToLower(c.Name.String()) == sLower || c.Name.Slugify() == sLower {
-			return c, nil
-		}
+	if c, ok := normalizedNames[sLower]; ok {
+		return c, nil
 	}
 
 	// Try parsing as hex code
@@ -527,9 +542,12 @@ func FromString(s string) (X11Color, error) {
 			hex = string([]byte{hex[0], hex[0], hex[1], hex[1], hex[2], hex[2]})
 		}
 		if len(hex) == 6 {
-			var r, g, b uint8
-			n, err := fmt.Sscanf(hex, "%02x%02x%02x", &r, &g, &b)
-			if err == nil && n == 3 {
+			val, err := strconv.ParseUint(hex, 16, 32)
+			if err == nil {
+				r := uint8(val >> 16)
+				g := uint8((val >> 8) & 0xFF)
+				b := uint8(val & 0xFF)
+
 				// We can return a generic X11Color since it's an arbitrary hex.
 				// But first let's see if this hex matches any X11 color perfectly.
 				for _, c := range colors {
