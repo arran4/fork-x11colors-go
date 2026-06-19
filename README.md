@@ -2,6 +2,8 @@
 
 The package provides X11 colors names as variables, together with colors caption names and couple additional helper functions.
 
+The color list includes the full historical `rgb.txt` database (sourced from the [X.Org standard rgb.txt](https://gitlab.freedesktop.org/xorg/app/rgb/-/raw/master/rgb.txt)), as well as preserving backwards compatibility with some traditional W3C and Wikipedia color names.
+
 Use the following command to install the package:
 
 ```

@@ -1,0 +1,95 @@
+<<<<<<< SEARCH
+	// Try case-insensitive name match or slug match
+	sLower := strings.ToLower(s)
+	// We can iterate through names to find case-insensitive match since it's already generated
+	for nameStr, c := range names {
+		if strings.ToLower(nameStr) == sLower || c.Name.Slugify() == sLower {
+			return c, true
+		}
+	}
+
+	// Try parsing as hex code
+	if strings.HasPrefix(s, "#") {
+		hex := s[1:]
+		if len(hex) == 3 {
+			// Expand short hex e.g. #ABC to #AABBCC
+			hex = string([]byte{hex[0], hex[0], hex[1], hex[1], hex[2], hex[2]})
+		}
+		if len(hex) == 6 {
+			val, err := strconv.ParseUint(hex, 16, 32)
+			if err == nil {
+				r := uint8(val >> 16)
+				g := uint8((val >> 8) & 0xFF)
+				b := uint8(val & 0xFF)
+
+				// Check if this hex matches any X11 color perfectly
+				for _, c := range colors {
+					if c.RGBA.R == r && c.RGBA.G == g && c.RGBA.B == b {
+						return c, true
+					}
+				}
+
+				// Basic lightness calculation to set a sensible CaptionBlack value
+				// Luma = 0.2126 * R + 0.7152 * G + 0.0722 * B
+				luma := 0.2126*float64(r) + 0.7152*float64(g) + 0.0722*float64(b)
+				captionBlack := luma > 128
+
+				return X11Color{
+					Name:         Name(s),
+					RGBA:         color.RGBA{R: r, G: g, B: b, A: 0xFF},
+					CaptionBlack: captionBlack,
+				}, true
+			}
+		}
+	}
+
+	return X11Color{}, false
+}
+=======
+	// Try parsing as hex code
+	if strings.HasPrefix(s, "#") {
+		hex := s[1:]
+		if len(hex) == 3 {
+			// Expand short hex e.g. #ABC to #AABBCC
+			hex = string([]byte{hex[0], hex[0], hex[1], hex[1], hex[2], hex[2]})
+		}
+		if len(hex) == 6 {
+			val, err := strconv.ParseUint(hex, 16, 32)
+			if err == nil {
+				r := uint8(val >> 16)
+				g := uint8((val >> 8) & 0xFF)
+				b := uint8(val & 0xFF)
+
+				// Check if this hex matches any X11 color perfectly
+				for _, c := range colors {
+					if c.RGBA.R == r && c.RGBA.G == g && c.RGBA.B == b {
+						return c, true
+					}
+				}
+
+				// Basic lightness calculation to set a sensible CaptionBlack value
+				// Luma = 0.2126 * R + 0.7152 * G + 0.0722 * B
+				luma := 0.2126*float64(r) + 0.7152*float64(g) + 0.0722*float64(b)
+				captionBlack := luma > 128
+
+				return X11Color{
+					Name:         Name(s),
+					RGBA:         color.RGBA{R: r, G: g, B: b, A: 0xFF},
+					CaptionBlack: captionBlack,
+				}, true
+			}
+		}
+	}
+
+	// Try case-insensitive name match or slug match
+	sLower := strings.ToLower(s)
+	// We can iterate through names to find case-insensitive match since it's already generated
+	for nameStr, c := range names {
+		if strings.ToLower(nameStr) == sLower || c.Name.Slugify() == sLower {
+			return c, true
+		}
+	}
+
+	return X11Color{}, false
+}
+>>>>>>> REPLACE
