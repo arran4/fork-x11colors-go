@@ -49,6 +49,16 @@ func GetByName(name string) (x11color X11Color, found bool) {
 	return
 }
 
+var normalizedNames map[string]X11Color
+
+func init() {
+	normalizedNames = make(map[string]X11Color, len(names)*2)
+	for nameStr, c := range names {
+		normalizedNames[strings.ToLower(nameStr)] = c
+		normalizedNames[c.Name.Slugify()] = c
+	}
+}
+
 // FromString attempts to parse a string into an X11Color.
 // It tries to match by exact name, case-insensitive name, slug, or hex code (e.g., "#F0F8FF" or "#FFF").
 func FromString(s string) (X11Color, bool) {
@@ -94,18 +104,15 @@ func FromString(s string) (X11Color, bool) {
 
 	// Try case-insensitive name match or slug match
 	sLower := strings.ToLower(s)
-	// We can iterate through names to find case-insensitive match since it's already generated
-	for nameStr, c := range names {
-		if strings.ToLower(nameStr) == sLower || c.Name.Slugify() == sLower {
-			return c, true
-		}
+	if c, ok := normalizedNames[sLower]; ok {
+		return c, true
 	}
 
 	return X11Color{}, false
 }
 
-func sqDiff(c1, c2 uint8) float64 {
-	d := float64(c1) - float64(c2)
+func sqDiff(c1, c2 uint8) int {
+	d := int(c1) - int(c2)
 	return d * d
 }
 
@@ -116,7 +123,7 @@ func GetClosest(c color.RGBA) X11Color {
 		return X11Color{}
 	}
 	closest := colors[0]
-	minDist := math.MaxFloat64
+	minDist := math.MaxInt
 
 	for _, x11c := range colors {
 		dist := sqDiff(c.R, x11c.RGBA.R) + sqDiff(c.G, x11c.RGBA.G) + sqDiff(c.B, x11c.RGBA.B)
